@@ -21,19 +21,19 @@ Binary event forecasting tasks are widely used in professional
 prediction platforms. These questions typically exhibit the following
 characteristics:
 
--   A Yes / No structure\
--   A clearly defined resolution date\
--   Objectively verifiable ground truth\
+-   A Yes / No structure
+-   A clearly defined resolution date
+-   Objectively verifiable ground truth
 -   Quantifiable evaluation metrics
 
 Although large language models demonstrate strong reasoning
 capabilities, directly applying a single model to forecasting introduces
 several limitations:
 
-1.  Overconfidence under uncertainty\
-2.  Hallucinated or weakly supported conclusions\
-3.  Lack of access to real-time external information\
-4.  Limited interpretability of the reasoning process\
+1.  Overconfidence under uncertainty
+2.  Hallucinated or weakly supported conclusions
+3.  Lack of access to real-time external information
+4.  Limited interpretability of the reasoning process
 5.  Inability to dynamically adapt strategy based on question complexity
 
 PreAgent systematically addresses these challenges by introducing
@@ -99,9 +99,9 @@ strategies.
 
 Responsible for acquiring external evidence:
 
--   Generate search queries from the question\
--   Call search APIs\
--   Rank and filter results\
+-   Generate search queries from the question
+-   Call search APIs
+-   Rank and filter results
 -   Extract structured evidence summaries
 
 This module reduces hallucination and strengthens factual grounding.
@@ -114,8 +114,8 @@ Responsible for analyzing evidence and performing structured inference.
 
 The system supports multiple reasoning personas, such as:
 
--   Optimistic analyst\
--   Conservative analyst\
+-   Optimistic analyst
+-   Conservative analyst
 -   Risk evaluator
 
 Different agents provide diverse perspectives, improving reasoning
@@ -127,9 +127,9 @@ robustness and diversity.
 
 Responsible for:
 
--   Aggregating reasoning outputs from all agents\
--   Evaluating logical consistency\
--   Assessing evidence strength\
+-   Aggregating reasoning outputs from all agents
+-   Evaluating logical consistency
+-   Assessing evidence strength
 -   Producing the final Yes / No prediction
 
 ------------------------------------------------------------------------
@@ -140,8 +140,8 @@ PreAgent implements three core forecasting strategies.
 
 ## 4.1 BaselineAgent
 
--   Retrieval-augmented reasoning\
--   Single-pass inference\
+-   Retrieval-augmented reasoning
+-   Single-pass inference
 -   Simple structure and computationally efficient
 
 Used as the primary baseline for comparison.
@@ -150,8 +150,8 @@ Used as the primary baseline for comparison.
 
 ## 4.2 DebateAgent
 
--   Multiple reasoning agents analyze the same evidence\
--   Agents engage in multi-round critique and rebuttal\
+-   Multiple reasoning agents analyze the same evidence
+-   Agents engage in multi-round critique and rebuttal
 -   A Moderator aggregates arguments and produces the final decision
 
 This structured adversarial mechanism reduces single-perspective bias
@@ -161,9 +161,9 @@ and enhances robustness.
 
 ## 4.3 DynAgent (Dynamic Strategy Agent)
 
--   Evaluates question complexity\
--   Dynamically decides whether to perform retrieval\
--   Dynamically decides whether to initiate debate\
+-   Evaluates question complexity
+-   Dynamically decides whether to perform retrieval
+-   Dynamically decides whether to initiate debate
 -   Adjusts reasoning rounds accordingly
 
 DynAgent balances predictive performance and computational cost, making
@@ -175,8 +175,8 @@ it suitable for large-scale forecasting scenarios.
 
 Each strategy includes a corresponding NoSearch version:
 
--   BaselineAgent_NoSearch\
--   DebateAgent_NoSearch\
+-   BaselineAgent_NoSearch
+-   DebateAgent_NoSearch
 -   DynAgent_NoSearch
 
 These variants remove external retrieval and rely solely on internal LLM
@@ -196,18 +196,18 @@ questions, sourced from the following prediction platforms:
 
 These datasets are collected through web scraping scripts located in the `datascrap/` directory. Each sample includes:
 
--   Question text\
--   Background information\
--   Resolution criteria\
--   Time window\
+-   Question text
+-   Background information
+-   Resolution criteria
+-   Time window
 -   Ground truth label (0/1)
 
 Preprocessing steps include:
 
--   Field normalization\
--   Time format standardization\
--   Invalid data filtering\
--   External link extraction\
+-   Field normalization
+-   Time format standardization
+-   Invalid data filtering
+-   External link extraction
 -   Construction of structured datasets
 
 Only resolved questions are retained for evaluation to ensure objective
@@ -215,47 +215,79 @@ benchmarking.
 
 ------------------------------------------------------------------------
 
-# 6. Experimental Design
+# 6. Experimental Design and Results
+
+## Experiment Setup
 
 Experiments compare:
 
--   Retrieval vs. No Retrieval\
--   Single-agent vs. Multi-agent debate\
--   Fixed strategy vs. Dynamic strategy
+- Retrieval vs. No Retrieval
+- Single-agent vs. Multi-agent debate
+- Fixed strategy vs. Dynamic strategy
 
 Evaluation metrics include:
 
--   Accuracy\
--   Precision\
--   Recall\
--   F1 Score\
--   Confusion Matrix
+- Accuracy
+- Precision
+- Recall
+- F1 Score
+- Confusion Matrix
 
-Key observations:
+## Experimental Results
 
-1.  Dataset characteristics significantly affect agent performance.\
-2.  Debate without retrieval may become overly conservative.\
-3.  Retrieval is critical for policy-driven or dynamically evolving
-    questions.\
-4.  Dynamic routing improves efficiency under resource constraints.
+*Note: Due to API quota limitations, only partial results are available.*
+
+### GJOpen Dataset
+
+| **Agent Type** | **Accuracy** | **Precision** | **Recall** | **F1** |
+| --- | --- | --- | --- | --- |
+| Baseline_NoSearch | 0.9118 | 0.9333 | 0.8750 | 0.9032 |
+| Debate_NoSearch | 0.8824 | 0.9615 | 0.7812 | 0.8621 |
+| DynAgent_NoSearch | 0.9474 | 1.0000 | 0.8846 | 0.9388 |
+| DynAgent (20 questions) | 0.9048 | 1.0000 | 0.7500 | 0.8571 |
+
+### CSET Dataset
+
+| **Agent Type** | **Accuracy** | **Precision** | **Recall** | **F1** |
+| --- | --- | --- | --- | --- |
+| Baseline_NoSearch | 0.7451 | 0.4000 | 0.6000 | 0.4800 |
+| Debate_NoSearch | 0.8431 | 1.0000 | 0.2000 | 0.3333 |
+| DynAgent_NoSearch | 0.7727 | 0.2222 | 0.4000 | 0.2857 |
+| DynAgent (30 questions) | 0.7097 | 0.2222 | 0.5000 | 0.3077 |
+
+## Key Findings
+
+1. **Dataset characteristics significantly affect agent performance**
+   - GJOpen dataset: Higher performance due to fact-based, well-structured questions
+   - CSET dataset: Lower performance due to policy and international relations topics requiring current information
+
+2. **Multi-agent mechanisms have mixed effects without retrieval**
+   - May introduce noise in knowledge-sufficient scenarios
+   - Tends to become overly conservative in knowledge-deficient scenarios, reducing recall
+
+3. **Retrieval is critical for complex datasets**
+   - External evidence is essential for reducing hallucinations and improving judgment quality, especially for policy-driven questions
+
+4. **Dynamic strategies offer efficiency benefits**
+   - DynAgent maintains high precision while reducing unnecessary multi-round calls, balancing computational efficiency and performance
 
 ------------------------------------------------------------------------
 
 # 7. System Implementation
 
--   Programming Language: Python\
--   Multi-agent coordination framework\
--   LLM backend integration\
--   External search API integration\
--   Full reasoning trace logging\
+-   Programming Language: Python
+-   Multi-agent coordination framework
+-   LLM backend integration
+-   External search API integration
+-   Full reasoning trace logging
 -   Multi-GPU scheduling support
 
 The system records:
 
--   Prompts\
--   Retrieved evidence\
--   Intermediate reasoning steps\
--   Final outputs\
+-   Prompts
+-   Retrieved evidence
+-   Intermediate reasoning steps
+-   Final outputs
 -   Token usage statistics
 
 Ensuring reproducibility and interpretability.
@@ -283,19 +315,19 @@ Ensuring reproducibility and interpretability.
 
 # 9. Strengths
 
--   Modular multi-agent architecture\
--   Strategy-level ablation support\
--   Retrieval-augmented reasoning\
--   Structured and interpretable decision process\
+-   Modular multi-agent architecture
+-   Strategy-level ablation support
+-   Retrieval-augmented reasoning
+-   Structured and interpretable decision process
 -   Scalable execution framework
 
 ------------------------------------------------------------------------
 
 # 10. Limitations
 
--   API quota limits restrict large-scale retrieval experiments\
--   Some datasets have limited sample sizes\
--   No statistical significance testing conducted\
+-   API quota limits restrict large-scale retrieval experiments
+-   Some datasets have limited sample sizes
+-   No statistical significance testing conducted
 -   Systematic error-type analysis not yet completed
 
 ------------------------------------------------------------------------
