@@ -1,6 +1,6 @@
 import os
-os.environ['http_proxy'] = "http://172.23.61.8:4780"
-os.environ['https_proxy'] = "http://172.23.61.8:4780"
+os.environ['http_proxy'] = os.getenv("HTTP_PROXY")
+os.environ['https_proxy'] = os.getenv("HTTPS_PROXY")
 import platform
 import sys
 import argparse
@@ -77,8 +77,8 @@ subscription_key = os.getenv("AZURE_OPENAI_API_KEY")
 #         )
 
 proxies = {
-    "http": "http://172.23.61.8:4780",  # 替换为翻墙工具的代理地址
-    "https": "http://172.23.61.8:4780",
+    "http": os.getenv("HTTP_PROXY"),  # 替换为翻墙工具的代理地址
+    "https": os.getenv("HTTPS_PROXY"),
 }
 
 

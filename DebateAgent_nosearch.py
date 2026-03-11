@@ -10,9 +10,11 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 import platform
 import sys
-os.environ['http_proxy'] = "http://172.23.61.8:4780"
-os.environ['https_proxy'] = "http://172.23.61.8:4780"
+
 load_dotenv()
+
+os.environ['http_proxy'] = os.getenv("HTTP_PROXY", "")
+os.environ['https_proxy'] = os.getenv("HTTPS_PROXY", "")
 ###可以参考https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/core-concepts/topic-and-subscription.html
 ###可以参考https://microsoft.github.io/autogen/stable//user-guide/core-user-guide/design-patterns/multi-agent-debate.html
 ###gpt和3.7代码写错了，主要是主题的source问题，也就是租户多少问题
