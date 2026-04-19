@@ -2,53 +2,43 @@
 
 ## A Multi-Agent Forecasting Framework for Binary Event Prediction
 
-PreAgent is a structured multi-agent forecasting framework designed for
-**binary real-world event prediction (Yes / No)**. The system transforms
-traditional single large language model (LLM) inference into a modular,
-controllable, and interpretable multi-agent collaborative decision
-architecture.
+PreAgent is a structured multi-agent forecasting framework for **binary real-world event prediction (Yes / No)**. It is designed for forecasting questions with explicit time windows and objectively verifiable outcomes, such as:
 
-The project targets forecasting questions with explicit time windows and
-objectively verifiable outcomes, such as:
+> “Will event X occur before time Y?”
 
-> "Will event X occur before time Y?"
+Instead of relying on a single large language model (LLM) to make an end-to-end judgment, PreAgent organizes forecasting into a structured pipeline that combines evidence retrieval, agent-based reasoning, and final decision aggregation.
 
-------------------------------------------------------------------------
+---
 
 # 1. Background and Motivation
 
-Binary event forecasting tasks are widely used in professional
-prediction platforms. These questions typically exhibit the following
-characteristics:
+Binary event forecasting is widely used on professional prediction platforms. These questions usually have the following properties:
 
--   A Yes / No structure
--   A clearly defined resolution date
--   Objectively verifiable ground truth
--   Quantifiable evaluation metrics
+- A Yes / No outcome
+- A clearly defined resolution date
+- Objectively verifiable ground truth
+- Quantifiable evaluation metrics
 
-Although large language models demonstrate strong reasoning
-capabilities, directly applying a single model to forecasting introduces
-several limitations:
+Although LLMs have strong reasoning ability, directly applying a single model to forecasting still introduces several limitations:
 
-1.  Overconfidence under uncertainty
-2.  Hallucinated or weakly supported conclusions
-3.  Lack of access to real-time external information
-4.  Limited interpretability of the reasoning process
-5.  Inability to dynamically adapt strategy based on question complexity
+1. Overconfidence under uncertainty  
+2. Hallucinated or weakly supported conclusions  
+3. Limited access to up-to-date external information  
+4. Limited interpretability of the reasoning process  
+5. Difficulty adapting strategy to questions of different complexity  
 
-PreAgent systematically addresses these challenges by introducing
-structured multi-agent collaboration, retrieval-augmented reasoning,
-debate mechanisms, and dynamic strategy routing.
+PreAgent explores whether structured agent coordination can make forecasting more robust, interpretable, and controllable.
 
-------------------------------------------------------------------------
+---
 
 # 2. Overall System Architecture
 
-Data Preparation → Strategy Selection → Retrieval & Reasoning → Decision
-Aggregation → Evaluation & Logging
+**Common pipeline**  
+Data Preparation → Strategy Selection → Retrieval / Reasoning → Decision Aggregation → Evaluation & Logging
 
 ## System Architecture Diagram
 
+```text
                                ┌────────────────────────┐
                                │     Forecast Dataset   │
                                │ (Resolved Binary Qs)   │
@@ -65,352 +55,338 @@ Aggregation → Evaluation & Logging
                         ┌───────────────────┼───────────────────────┐
                         │                   │                       │
                         ▼                   ▼                       ▼
-                 ┌───────────────┐   ┌────────────────┐   ┌────────────────┐
-                 │ BaselineAgent │   │  DebateAgent   │   │    DynAgent    │
-                 └───────┬───────┘   └───────┬────────┘   └────────┬───────┘
-                         │                   │                        │
-                         ▼                   ▼                        ▼
-                 ┌───────────────┐  ┌───────────────────┐  ┌─────────────────┐
-                 │ Retrieval +   │  │ Multi-Agent Debate│  │ Dynamic Routing │
-                 │  Reasoning    │  │ (Debaters + Mod)  │  │ Decision Logic  │
-                 └───────────────┘  └───────────────────┘  └─────────────────┘
-                         │                   │                        │
-                         └───────────────┬───┴───────────────┬────────┘
-                                         ▼                   ▼
-                                  ┌────────────────────────┐
-                                  │  Decision Aggregation  │
-                                  └────────────┬───────────┘
-                                               ▼
+                ┌───────────────┐   ┌────────────────┐   ┌────────────────┐
+                │ BaselineAgent │   │  DebateAgent   │   │    DynAgent    │
+                └─────-─┬───────┘   └───────┬────────┘   └────────┬───────┘
+                        │                   │                     │
+                        ▼                   ▼                     ▼
+                ┌───────────────┐  ┌───────────────────┐  ┌──────────────────────────┐
+                │ Retrieval +   │  │ Multi-Agent Debate│  │ Dynamic Expert / Process │
+                │  Reasoning    │  │ (Debaters + Mod)  │  │ Coordination Logic       │
+                └───────┬───────┘  └─────────┬─────────┘  └──────────┬───────────────┘
+                        │                    │                       │
+                        ▼                    ▼                       ▼
+                ┌───────────────┐  ┌───────────────────┐  ┌──────────────────────────┐
+                │   Decision    │  │ Decision          │  │       Decision           │
+                │               │  │ Aggregation       │  │      Aggregation         │
+                └───────┬───────┘  └─────────┬─────────┘  └──────────┬───────────────┘
+                        │                    │                       │
+                        └────────────────────┬──────────────-────────┘
+                                             │
+                                             ▼
                                   ┌────────────────────────┐
                                   │ Evaluation & Logging   │
                                   │ Accuracy / F1 / Matrix │
                                   └────────────────────────┘
+```
 
-The architecture separates the system into two core layers: the
-**Functional Layer** and the **Strategy Layer**, enabling controlled
-comparison and ablation analysis across different forecasting
-strategies.
+The framework follows a common forecasting pipeline, while each strategy adopts a different internal agent organization and coordination mechanism.
 
-------------------------------------------------------------------------
+For clarity, the “Functional Layer” and “Strategy Layer” in this project should be understood as **conceptual design abstractions** rather than a fully unified shared implementation across all agents. In practice, different strategies instantiate different agent roles and communication structures.
 
-# 3. Functional Module Design
+---
 
-## 3.1 SearchAgent (Information Retrieval)
+# 3. Conceptual Functional Modules
 
-Responsible for acquiring external evidence:
+The project can be described through three conceptual functions that recur across the forecasting pipeline.
 
--   Generate search queries from the question
--   Call search APIs
--   Rank and filter results
--   Extract structured evidence summaries
+## 3.1 Retrieval
 
-This module reduces hallucination and strengthens factual grounding.
+This stage is responsible for obtaining potentially relevant external evidence:
 
-------------------------------------------------------------------------
+- Generate search queries from the forecasting question
+- Call external search tools or APIs
+- Filter and rank returned results
+- Extract short evidence summaries
 
-## 3.2 ReasoningAgent (Evidence-Based Reasoning)
+Its goal is to reduce unsupported reasoning and improve factual grounding.
 
-Responsible for analyzing evidence and performing structured inference.
+## 3.2 Reasoning
 
-The system supports multiple reasoning personas, such as:
+This stage is responsible for analyzing question context and evidence.
 
--   Optimistic analyst
--   Conservative analyst
--   Risk evaluator
+Depending on the strategy, reasoning may be performed by:
 
-Different agents provide diverse perspectives, improving reasoning
-robustness and diversity.
+- A single forecasting agent
+- Multiple debating agents with different perspectives
+- A dynamically coordinated set of expert-like agents
 
-------------------------------------------------------------------------
+The exact implementation differs by strategy rather than being enforced through one identical shared module.
 
-## 3.3 DecisionAgent (Decision Aggregation)
+## 3.3 Decision Aggregation
 
-Responsible for:
+This stage is responsible for producing the final Yes / No forecast by:
 
--   Aggregating reasoning outputs from all agents
--   Evaluating logical consistency
--   Assessing evidence strength
--   Producing the final Yes / No prediction
+- Combining intermediate reasoning outputs
+- Weighing evidence support and logical consistency
+- Generating the final prediction
 
-------------------------------------------------------------------------
+---
 
 # 4. Strategy Layer Design
 
-PreAgent implements three core forecasting strategies.
+PreAgent implements three main forecasting strategies, along with NoSearch variants for ablation.
 
 ## 4.1 BaselineAgent
 
--   Retrieval-augmented reasoning
--   Single-pass inference
--   Simple structure and computationally efficient
+BaselineAgent represents the simplest retrieval-augmented forecasting setting.
 
-Used as the primary baseline for comparison.
+- Uses external retrieval when enabled
+- Performs relatively direct evidence-based reasoning
+- Produces a final binary decision with a simple coordination structure
 
-------------------------------------------------------------------------
+This agent serves as the main baseline for comparison.
 
 ## 4.2 DebateAgent
 
--   Multiple reasoning agents analyze the same evidence
--   Agents engage in multi-round critique and rebuttal
--   A Moderator aggregates arguments and produces the final decision
+DebateAgent introduces structured multi-agent critique.
 
-This structured adversarial mechanism reduces single-perspective bias
-and enhances robustness.
+- Multiple agents analyze the same question or evidence
+- Agents challenge, critique, or refine one another’s reasoning across rounds
+- A moderator-like agent aggregates the discussion into a final decision
 
-------------------------------------------------------------------------
+This design aims to reduce single-perspective bias through structured adversarial reasoning.
 
-## 4.3 DynAgent (Dynamic Strategy Agent)
+## 4.3 DynAgent
 
--   Evaluates question complexity
--   Dynamically decides whether to perform retrieval
--   Dynamically decides whether to initiate debate
--   Adjusts reasoning rounds accordingly
+DynAgent is the most adaptive strategy in the project.
 
-DynAgent balances predictive performance and computational cost, making
-it suitable for large-scale forecasting scenarios.
+In the current implementation, DynAgent is better described as a **dynamic coordination mechanism** than as a fixed hand-crafted router. It organizes forecasting through iterative agent interaction, where the system may adjust the use of experts, discussion flow, and evidence collection according to the problem and intermediate reasoning state.
 
-------------------------------------------------------------------------
+More specifically, DynAgent is intended to:
+
+- adapt coordination according to question needs,
+- reduce unnecessary multi-round interaction when possible,
+- balance forecasting quality and computational cost.
+
+To avoid overstating the implementation, DynAgent should be understood as **dynamic expert / process coordination** rather than a fully formalized complexity-scoring router.
 
 ## 4.4 NoSearch Variants
 
-Each strategy includes a corresponding NoSearch version:
+Each main strategy includes a corresponding NoSearch version:
 
--   BaselineAgent_NoSearch
--   DebateAgent_NoSearch
--   DynAgent_NoSearch
+- `BaselineAgent_nosearch.py`
+- `DebateAgent_nosearch.py`
+- `DynAgent_nosearch.py`
 
-These variants remove external retrieval and rely solely on internal LLM
-knowledge, enabling structural ablation analysis.
+These variants disable external retrieval and rely only on the model’s internal knowledge and reasoning process. They are used for structural ablation analysis, helping separate the effect of **agent structure** from the effect of **external information access**.
 
-------------------------------------------------------------------------
+---
 
 # 5. Data and Preprocessing Pipeline
 
-The system supports datasets consisting of resolved binary forecasting
-questions, sourced from the following prediction platforms:
+The project uses resolved binary forecasting questions collected from multiple forecasting platforms, including:
 
-- **CSET** (Center for Security and Emerging Technology)
-- **Good Judgment Open**
+- **CSET**
+- **Good Judgment Open (GJOpen)**
 - **Manifold Markets**
 - **Metaculus**
 
-These datasets are collected through web scraping scripts located in the `datascrap/` directory. Each sample includes:
+Each sample may include:
 
--   Question text
--   Background information
--   Resolution criteria
--   Time window
--   Ground truth label (0/1)
+- Question text
+- Background or description
+- Resolution criteria
+- Time window
+- Ground-truth label (0/1)
 
-Preprocessing steps include:
+Preprocessing includes:
 
--   Field normalization
--   Time format standardization
--   Invalid data filtering
--   External link extraction
--   Construction of structured datasets
+- Field normalization
+- Time-format standardization
+- Invalid-sample filtering
+- Optional extraction of external links or related references
+- Construction of structured processed datasets for experiments
 
-Only resolved questions are retained for evaluation to ensure objective
-benchmarking.
+Only resolved questions are retained for evaluation so that predictions can be compared against objective outcomes.
 
-------------------------------------------------------------------------
+---
 
 # 6. Experimental Design and Results
 
 ## Experiment Setup
 
-Experiments compare:
+The experiments are designed to compare:
 
 - Retrieval vs. No Retrieval
-- Single-agent vs. Multi-agent debate
-- Fixed strategy vs. Dynamic strategy
+- Simpler vs. richer agent coordination
+- Fixed strategy vs. more adaptive coordination
 
 Evaluation metrics include:
 
 - Accuracy
 - Precision
 - Recall
-- F1 Score
-- Confusion Matrix
+- F1 score
+- Confusion-matrix-based analysis
+
+## Important Evaluation Note
+
+Due to search API quota constraints, retrieval-enabled experiments were conducted only on limited subsets in some settings. Therefore, current retrieval-based results should be interpreted as **preliminary evidence** rather than as fully scaled, strictly comparable final results.
+
+For this reason, the tables below explicitly include question counts where subset evaluation was used.
 
 ## Experimental Results
 
-*Note: Due to API quota limitations, only partial results are available.*
-
 ### GJOpen Dataset
 
-| **Agent Type** | **Accuracy** | **Precision** | **Recall** | **F1** |
-| --- | --- | --- | --- | --- |
+| Agent Type | Accuracy | Precision | Recall | F1 |
+| --- | --- | ---: | ---: | ---: |
 | Baseline_NoSearch | 0.9118 | 0.9333 | 0.8750 | 0.9032 |
 | Debate_NoSearch | 0.8824 | 0.9615 | 0.7812 | 0.8621 |
 | DynAgent_NoSearch | 0.9474 | 1.0000 | 0.8846 | 0.9388 |
-| DynAgent (20 questions) | 0.9048 | 1.0000 | 0.7500 | 0.8571 |
+| DynAgent | 0.9048 | 1.0000 | 0.7500 | 0.8571 |
 
 ### CSET Dataset
 
-| **Agent Type** | **Accuracy** | **Precision** | **Recall** | **F1** |
-| --- | --- | --- | --- | --- |
+| Agent Type | Accuracy | Precision | Recall | F1 |
+| --- | --- | ---: | ---: | ---: |
 | Baseline_NoSearch | 0.7451 | 0.4000 | 0.6000 | 0.4800 |
 | Debate_NoSearch | 0.8431 | 1.0000 | 0.2000 | 0.3333 |
 | DynAgent_NoSearch | 0.7727 | 0.2222 | 0.4000 | 0.2857 |
-| DynAgent (30 questions) | 0.7097 | 0.2222 | 0.5000 | 0.3077 |
+| DynAgent | 0.7097 | 0.2222 | 0.5000 | 0.3077 |
 
 ## Key Findings
 
-1. **Dataset characteristics significantly affect agent performance**
-   - GJOpen dataset: Higher performance due to fact-based, well-structured questions
-   - CSET dataset: Lower performance due to policy and international relations topics requiring current information
+### 1. Dataset characteristics strongly affect forecasting behavior
 
-2. **Multi-agent mechanisms have mixed effects without retrieval**
-   - May introduce noise in knowledge-sufficient scenarios
-   - Tends to become overly conservative in knowledge-deficient scenarios, reducing recall
+Performance is much higher on GJOpen than on CSET. A plausible interpretation is that GJOpen contains more fact-bounded and structurally explicit questions, while CSET includes more policy-sensitive or time-sensitive questions that depend more heavily on external and current evidence.
 
-3. **Retrieval is critical for complex datasets**
-   - External evidence is essential for reducing hallucinations and improving judgment quality, especially for policy-driven questions
+### 2. More agents do not automatically improve no-retrieval forecasting
 
-4. **Dynamic strategies offer efficiency benefits**
-   - DynAgent maintains high precision while reducing unnecessary multi-round calls, balancing computational efficiency and performance
+Under NoSearch settings, richer agent interaction does not always improve results. In some cases, multi-agent discussion can introduce extra conservatism or noise, especially when the model lacks enough background knowledge to support confident forecasting.
 
-------------------------------------------------------------------------
+### 3. External evidence appears especially important for harder policy-oriented questions
 
-# 7. System Implementation
+The current results suggest that retrieval matters more for datasets like CSET, where internal model knowledge alone is less sufficient. However, because retrieval-enabled runs are still limited, this should be treated as an informed preliminary conclusion rather than a definitive claim.
 
--   Programming Language: Python
--   Multi-agent coordination framework
--   LLM backend integration
--   External search API integration
--   Full reasoning trace logging
--   Multi-GPU scheduling support
+### 4. Adaptive coordination may offer an efficiency-performance tradeoff
 
-The system records:
-
--   Prompts
--   Retrieved evidence
--   Intermediate reasoning steps
--   Final outputs
--   Token usage statistics
-
-Ensuring reproducibility and interpretability.
-
-------------------------------------------------------------------------
-
-# 8. Project Structure
-
-    preagent/
-    │
-    ├── configs/            # Configuration files
-    ├── data/               # Processed datasets
-    ├── datascrap/          # Data scraping scripts
-    ├── prompts/            # Prompt templates
-    ├── utils/              # Utility functions
-    ├── BaselineAgent.py
-    ├── DebateAgent.py
-    ├── DynAgent.py
-    ├── main.py             # Entry point
-    ├── multigpu.py         # Multi-GPU scheduler
-    ├── run.sh              # Experiment scripts
-    └── complog/            # Logs and reasoning traces
-
-------------------------------------------------------------------------
-
-# 9. Strengths
-
--   Modular multi-agent architecture
--   Strategy-level ablation support
--   Retrieval-augmented reasoning
--   Structured and interpretable decision process
--   Scalable execution framework
-
-------------------------------------------------------------------------
-
-# 10. Limitations
-
--   API quota limits restrict large-scale retrieval experiments
--   Some datasets have limited sample sizes
--   No statistical significance testing conducted
--   Systematic error-type analysis not yet completed
-
-------------------------------------------------------------------------
-
-# 11. Conclusion
-
-PreAgent demonstrates that transforming single-model inference into a
-structured multi-agent collaborative decision system can significantly
-enhance robustness, interpretability, and adaptability in binary event
-forecasting tasks.
-
-By integrating retrieval augmentation, multi-role debate, and dynamic
-strategy routing, the framework provides a practical exploration of
-multi-agent coordination for complex real-world decision-making
-scenarios.
+DynAgent is motivated by the idea that not all questions need the same degree of interaction. Preliminary runs suggest that adaptive coordination can sometimes preserve strong precision while avoiding unnecessary rounds, although more controlled large-scale evaluation is still needed.
 
 ---
 
-# 12. Getting Started
+# 7. System Implementation
 
-## Installation
+The project is implemented in Python and combines:
 
-### Prerequisites
+- LLM-based agent reasoning
+- External retrieval support
+- Multi-agent communication / coordination logic
+- Logging of prompts, evidence, and reasoning traces
+
+The current codebase should be understood as a **research-oriented experimental framework**, not a fully standardized production system. Some conceptual modules described in this README are reflected more clearly at the design level than as one fully unified implementation shared by every strategy.
+
+The system records:
+
+- Prompts
+- Retrieved evidence
+- Intermediate reasoning traces
+- Final outputs
+- Token usage statistics
+
+These logs support inspection, debugging, and experiment tracking.
+
+Regarding execution utilities, the repository also contains scripts for experiment management and task scheduling. These utilities are best understood as support for batch experimentation rather than as a central algorithmic contribution.
+
+---
+
+# 8. Project Structure
+
+```text
+preagent/
+│
+├── configs/                  # Configuration files
+├── data/                     # Processed datasets
+├── datascrap/                # Data scraping scripts
+├── prompts/                  # Prompt templates
+├── utils/                    # Utility functions
+├── BaselineAgent.py          # Baseline strategy with retrieval support
+├── BaselineAgent_nosearch.py # Baseline ablation without retrieval
+├── DebateAgent.py            # Debate-based strategy
+├── DebateAgent_nosearch.py   # Debate ablation without retrieval
+├── DynAgent.py               # Dynamically coordinated strategy
+├── DynAgent_nosearch.py      # Dynamic ablation without retrieval
+├── main.py                   # Main orchestration entry
+├── multigpu.py               # Batch execution / scheduling utility
+└── complog/                  # Logs and reasoning traces
+```
+
+---
+
+# 9. Limitations
+
+- Search API quota constraints restrict the scale of retrieval-enabled experiments
+- Some reported retrieval results are based on subsets rather than full matched evaluations
+- No statistical significance testing has been conducted yet
+- Calibration of confidence / overconfidence has not been systematically evaluated
+- Systematic error taxonomy and failure-case analysis remain incomplete
+- Some parts of the codebase retain research-prototype characteristics rather than fully unified software abstractions
+
+---
+
+# 10. Conclusion
+
+PreAgent explores how binary event forecasting can be transformed from single-model inference into a more structured multi-agent decision process.
+
+Across baseline, debate-based, and dynamically coordinated settings, the project investigates how external evidence, coordination structure, and adaptive interaction may affect forecasting quality. While the current results are still partial in some retrieval-enabled settings, they suggest that structured coordination is a promising direction for improving robustness and interpretability in real-world forecasting tasks.
+
+---
+
+# 11. Getting Started
+
+## Requirements
+
 - Python 3.7+
 - pip
+- Access to the required model and search APIs if you want to run retrieval-enabled experiments
 
-### Setup
+## Setup
+
 1. Clone the repository
-2. Install dependencies (if any)
-3. Configure environment variables
+2. Install dependencies
+3. Configure required environment variables or local configuration files
 
-## Configuration
+## Example Environment Configuration
 
-### Environment Variables
-The project uses environment variables for configuration. Create a `.env` file based on the `.env.example` template:
+Typical configuration may include:
+
+- Model API credentials
+- Search API credentials
+- Optional proxy settings
+- Local data paths
+
+Example:
 
 ```bash
-cp .env.example .env
-```
-
-Then edit the `.env` file to set your specific values:
-
-- **API Keys**: Various API keys for different platforms
-- **Proxy Settings**: Proxy configuration for network requests
-- **Path Settings**: Paths for data storage and ChromeDriver
-
-### Key Configuration Items
-
-#### Proxy Settings
-```
 HTTP_PROXY=http://your-proxy:port
 HTTPS_PROXY=http://your-proxy:port
-```
-
-#### Path Settings
-```
-DATA_ROOT_DIR=./data  # Directory for storing scraped data
-CHROMEDRIVER_PATH=/usr/local/bin/chromedriver  # Path to ChromeDriver executable
+DATA_ROOT_DIR=./data
+CHROMEDRIVER_PATH=/usr/local/bin/chromedriver
 ```
 
 ## Usage
 
-### Running the Project
+Please update the exact command according to your local code entry and experiment setup. Based on the current repository files, likely entry points include:
+
 ```bash
-python BasenoAgent.py --dataset cset --prompt detailed
+python BaselineAgent.py
+python DebateAgent.py
+python DynAgent.py
 ```
 
-### Data Scraping
-The project includes scripts to scrape data from various platforms:
-- `datascrap/gjopen1.py` - Scrape data from Good Judgment Open
-- `datascrap/cset1.py` - Scrape data from CSET
-- `datascrap/manifold.py` - Scrape data from Manifold Markets
-- `datascrap/metaculus.py` - Scrape data from Metaculus
+For ablation experiments:
 
-## Project Structure
-- `configs/` - Configuration files
-- `data/` - Scraped data
-- `datascrap/` - Data scraping scripts
-- `preagent_res/` - Results and logs
-- `prompts/` - Prompt templates
-- `utils/` - Utility functions
+```bash
+python BaselineAgent_nosearch.py
+python DebateAgent_nosearch.py
+python DynAgent_nosearch.py
+```
+
+`main.py` can also serve as an orchestration entry depending on your local setup.
 
 ## Notes
-- The `.env` file is excluded from version control (see `.gitignore`)
-- Always keep your API keys and sensitive information secure
-- Update the proxy settings according to your network environment
+
+- Keep API keys and sensitive settings out of version control.
+- Retrieval-enabled experiments may be limited by quota.
+- Reported retrieval results in this README should be interpreted together with the subset-size notes above.
