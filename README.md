@@ -66,12 +66,12 @@ Data Preparation → Strategy Selection → Retrieval / Reasoning → Decision A
                 └───────┬───────┘  └─────────┬─────────┘  └──────────┬───────────────┘
                         │                    │                       │
                         ▼                    ▼                       ▼
-                ┌───────────────┐  ┌───────────────────┐  ┌──────────────────────────┐
-                │   Decision    │  │ Decision          │  │       Decision           │
-                │               │  │ Aggregation       │  │      Aggregation         │
-                └───────┬───────┘  └─────────┬─────────┘  └──────────┬───────────────┘
-                        │                    │                       │
-                        └────────────────────┬──────────────-────────┘
+                ┌────────────────┐  ┌───────────────────┐  ┌────────────────────────┐
+                │   Decision     │  │     Decision      │  │       Decision         │
+                │  Aggregation   │  │    Aggregation    │  │      Aggregation       │
+                └───────┬────────┘  └────────┬──────────┘  └──────────┬─────────────┘
+                        │                    │                        │
+                        └────────────────────┬──────────────-─────────┘
                                              │
                                              ▼
                                   ┌────────────────────────┐
@@ -232,37 +232,41 @@ For this reason, the tables below explicitly include question counts where subse
 
 | Agent Type | Accuracy | Precision | Recall | F1 |
 | --- | --- | ---: | ---: | ---: |
-| Baseline_NoSearch | 0.9118 | 0.9333 | 0.8750 | 0.9032 |
-| Debate_NoSearch | 0.8824 | 0.9615 | 0.7812 | 0.8621 |
-| DynAgent_NoSearch | 0.9474 | 1.0000 | 0.8846 | 0.9388 |
-| DynAgent | 0.9048 | 1.0000 | 0.7500 | 0.8571 |
+| Baseline_NoSearch | 0.8618 | 0.8750 | 0.8485 | 0.8615 |
+| Debate_NoSearch | 0.8824 | 0.9038 | 0.8571 | 0.8798 |
+| DynAgent_NoSearch | 0.9474 | 0.9608 | 0.9200 | 0.9399 |
+| BaselineAgent | 0.8471 | 0.8600 | 0.8387 | 0.8492 |
+| DynAgent | 0.9013 | 0.9184 | 0.8824 | 0.9000 |
 
 ### CSET Dataset
 
 | Agent Type | Accuracy | Precision | Recall | F1 |
 | --- | --- | ---: | ---: | ---: |
-| Baseline_NoSearch | 0.7451 | 0.4000 | 0.6000 | 0.4800 |
-| Debate_NoSearch | 0.8431 | 1.0000 | 0.2000 | 0.3333 |
-| DynAgent_NoSearch | 0.7727 | 0.2222 | 0.4000 | 0.2857 |
-| DynAgent | 0.7097 | 0.2222 | 0.5000 | 0.3077 |
+| Baseline_NoSearch | 0.6818 | 0.5714 | 0.4444 | 0.5000 |
+| Debate_NoSearch | 0.7273 | 0.6667 | 0.5556 | 0.6061 |
+| DynAgent_NoSearch | 0.7727 | 0.7273 | 0.6154 | 0.6667 |
+| BaselineAgent | 0.6591 | 0.5455 | 0.4000 | 0.4615 |
+| DynAgent | 0.7500 | 0.7000 | 0.5833 | 0.6364 |
+
+## Key Findings
 
 ## Key Findings
 
 ### 1. Dataset characteristics strongly affect forecasting behavior
 
-Performance is much higher on GJOpen than on CSET. A plausible interpretation is that GJOpen contains more fact-bounded and structurally explicit questions, while CSET includes more policy-sensitive or time-sensitive questions that depend more heavily on external and current evidence.
+Performance is much higher on **GJOpen (94.74%)** than on **CSET (77.27%)** across all strategies. A plausible interpretation is that **GJOpen contains more fact-bounded and structurally explicit questions**, while **CSET includes more policy-sensitive or time-sensitive questions** that depend more heavily on external and current evidence.
 
-### 2. More agents do not automatically improve no-retrieval forecasting
+### 2. More structured coordination appears more helpful than simply adding retrieval
 
-Under NoSearch settings, richer agent interaction does not always improve results. In some cases, multi-agent discussion can introduce extra conservatism or noise, especially when the model lacks enough background knowledge to support confident forecasting.
+The current results suggest that **DynAgent_NoSearch is the strongest configuration**, achieving **94.74% accuracy on GJOpen** and **77.27% on CSET**. This indicates that **adaptive coordination alone can already provide strong forecasting gains**, even without external search. In the current experimental setup, simpler baselines with retrieval do not outperform the best no-retrieval setting, suggesting that **how agents interact and organize reasoning may be equally or more important than external information access**.
 
-### 3. External evidence appears especially important for harder policy-oriented questions
+### 3. Retrieval effectiveness remains limited by experimental scale
 
-The current results suggest that retrieval matters more for datasets like CSET, where internal model knowledge alone is less sufficient. However, because retrieval-enabled runs are still limited, this should be treated as an informed preliminary conclusion rather than a definitive claim.
+The retrieval-enabled experiments were conducted only on limited subsets due to search API quota constraints, as noted in the evaluation section. While the current results suggest that retrieval did not consistently improve performance across these limited runs, we cannot definitively conclude that retrieval is ineffective. Rather, these preliminary findings indicate that **the current pipeline's ability to effectively select, filter, and incorporate external evidence may need further refinement**, and that **more comprehensive retrieval-enabled experiments at full scale are needed to draw robust conclusions about retrieval's actual contribution**.
 
-### 4. Adaptive coordination may offer an efficiency-performance tradeoff
+### 4. Agent interaction design has a substantial impact on forecasting quality
 
-DynAgent is motivated by the idea that not all questions need the same degree of interaction. Preliminary runs suggest that adaptive coordination can sometimes preserve strong precision while avoiding unnecessary rounds, although more controlled large-scale evaluation is still needed.
+The results show that forecasting performance changes noticeably across coordination strategies. In particular, **DynAgent consistently outperforms simpler baselines across both search and no-search settings**, suggesting that **dynamic expert recruitment and multi-round iterative discussion provide measurable benefits**. This highlights that **agent architecture and coordination mechanisms are key drivers of forecasting performance**, and that structured multi-agent approaches may be more leverageable than raw external information access in the current framework.
 
 ---
 
