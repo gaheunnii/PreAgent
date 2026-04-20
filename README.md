@@ -248,7 +248,6 @@ For this reason, the tables below explicitly include question counts where subse
 | BaselineAgent | 0.6591 | 0.5455 | 0.4000 | 0.4615 |
 | DynAgent | 0.7500 | 0.7000 | 0.5833 | 0.6364 |
 
-## Key Findings
 
 ## Key Findings
 
